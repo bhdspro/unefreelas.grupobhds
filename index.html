@@ -32,7 +32,7 @@ body {
 }
 .top-bar {
   display: flex;
-  justify-content: space-between; /* Mantém um lado na esquerda e outro na direita */
+  justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
   background-color: var(--primary);
@@ -244,6 +244,8 @@ input:checked + .slider:before { transform: translateX(20px); }
   width: 100%;
   max-width: 400px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 .editable-input {
   padding: 8px;
@@ -251,6 +253,51 @@ input:checked + .slider:before { transform: translateX(20px); }
   border-radius: 4px;
   width: 100%;
   margin-top: 4px;
+}
+.search-bar {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 12px;
+  margin-bottom: 16px;
+}
+.search-bar input {
+  border: none;
+  margin-bottom: 0;
+  padding: 12px;
+}
+.search-bar .material-icons {
+  color: var(--text-secondary);
+}
+.financeiro-info {
+  background-color: var(--surface);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+.financeiro-info div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.financeiro-info div:last-child { margin-bottom: 0; }
+.priority-hours-container {
+  background-color: var(--surface);
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+.alert-box {
+  background-color: #FFF3E0;
+  border-left: 4px solid #FF9800;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #E65100;
+  border-radius: 4px;
 }
 </style>
 </head>
@@ -302,6 +349,9 @@ input:checked + .slider:before { transform: translateX(20px); }
       <input type="time" id="horario-entrada" required title="Horário de Entrada">
       <input type="time" id="horario-saida" required title="Horário de Saída">
       <input type="number" id="horario-intervalo" placeholder="Quantidade de Minutos do Intervalo" required>
+      <input type="number" id="horario-diaria" placeholder="Valor da Diária (R$)" required>
+      <input type="number" id="horario-vt" placeholder="Valor do Vale Transporte (R$)" required>
+      <input type="number" id="horario-va" placeholder="Valor do Vale Alimentação (R$)" required>
       <button type="submit" class="btn-primary">Criar Horário</button>
     </form>
     <div id="lista-horarios"></div>
@@ -309,6 +359,10 @@ input:checked + .slider:before { transform: translateX(20px); }
 
   <section id="admin-diaristas" class="tab-content">
     <h3>Gerenciar Diaristas</h3>
+    <div class="search-bar">
+      <span class="material-icons">search</span>
+      <input type="text" id="filtro-diaristas-admin" placeholder="Buscar por Nome, CPF ou WhatsApp" oninput="filtrarDiaristas('admin')">
+    </div>
     <div id="lista-diaristas-admin"></div>
   </section>
 </main>
@@ -323,6 +377,10 @@ input:checked + .slider:before { transform: translateX(20px); }
 
   <section id="gestor-diaristas" class="tab-content active">
     <h3>Gerenciar Diaristas (Avançado)</h3>
+    <div class="search-bar">
+      <span class="material-icons">search</span>
+      <input type="text" id="filtro-diaristas-gestor" placeholder="Buscar por Nome, CPF ou WhatsApp" oninput="filtrarDiaristas('gestor')">
+    </div>
     <div id="lista-diaristas-gestor"></div>
   </section>
 
@@ -387,14 +445,29 @@ input:checked + .slider:before { transform: translateX(20px); }
   </div>
 </div>
 
-<div id="modal-cadastro" class="modal">
+<!-- MODAL UNIFICADO PARA VAGA E CANCELAMENTO -->
+<div id="modal-acao-vaga" class="modal">
   <div class="modal-content">
-    <h3>Cadastro Rápido</h3>
-    <input type="text" id="cad-cpf" placeholder="CPF (Apenas números)" required maxlength="14">
-    <input type="text" id="cad-nome" placeholder="Nome Completo" required>
-    <input type="tel" id="cad-whatsapp" placeholder="Número de WhatsApp com DDD" required>
-    <button id="btn-cad-submit" class="btn-primary">Salvar e Confirmar Vaga</button>
-    <button class="btn-close-modal btn-text">Cancelar</button>
+    <h3>Detalhes da Vaga</h3>
+    <div id="acao-vaga-detalhes"></div>
+    
+    <div id="acao-vaga-cpf-step">
+      <input type="text" id="acao-cpf" placeholder="Digite seu CPF (Apenas Números)" maxlength="14">
+      <button id="btn-acao-continuar" class="btn-primary">Continuar</button>
+    </div>
+    
+    <div id="acao-vaga-cadastro-step" style="display:none;">
+      <input type="text" id="acao-nome" placeholder="Nome Completo" required>
+      <input type="tel" id="acao-whatsapp" placeholder="WhatsApp com DDD" required>
+      <button id="btn-acao-confirmar" class="btn-primary">Confirmar Vaga</button>
+    </div>
+    
+    <div id="acao-vaga-cancelar-step" style="display:none;">
+      <div id="msg-cancelamento" class="alert-box" style="display:none;"></div>
+      <button id="btn-acao-desistir" class="btn-danger" style="display:none;">Desistir da Diária</button>
+    </div>
+    
+    <button class="btn-close-modal btn-text" onclick="fecharModalAcao()">Fechar</button>
   </div>
 </div>
 
@@ -414,7 +487,7 @@ const modals = document.querySelectorAll('.modal');
 const btnLoginModal = document.getElementById('btn-login-modal');
 const btnVoltarInicio = document.getElementById('btn-voltar-inicio');
 const modalLogin = document.getElementById('modal-login');
-const modalCadastro = document.getElementById('modal-cadastro');
+const modalAcaoVaga = document.getElementById('modal-acao-vaga');
 const inputSenha = document.getElementById('input-senha');
 const btnCloseModals = document.querySelectorAll('.btn-close-modal');
 
@@ -465,7 +538,6 @@ function switchView(viewId) {
   views.forEach(v => v.classList.remove('active'));
   document.getElementById(viewId).classList.add('active');
   
-  // Controle de exibição dos botões do header
   if(viewId === 'view-admin' || viewId === 'view-gestor') {
     btnVoltarInicio.style.display = 'flex';
     btnLoginModal.style.display = 'none';
@@ -497,7 +569,9 @@ tabBtns.forEach(btn => {
 btnLoginModal.addEventListener('click', () => { modalLogin.classList.add('active'); });
 
 btnCloseModals.forEach(btn => {
-  btn.addEventListener('click', () => { modals.forEach(m => m.classList.remove('active')); });
+  btn.addEventListener('click', () => { 
+    modals.forEach(m => m.classList.remove('active')); 
+  });
 });
 
 document.getElementById('btn-login-submit').addEventListener('click', async () => {
@@ -536,7 +610,7 @@ function timeToMinutes(t) {
   return h * 60 + m;
 }
 
-// A carga horária agora soma o horário trabalhado + intervalo (Saída - Entrada direta)
+// O cálculo total exato da Carga Horária já contempla o intervalo inserido. (Exemplo: 20:30 a 05:30 são 9 horas totais corridas)
 function calcCargaHoraria(entrada, saida) {
   const start = timeToMinutes(entrada);
   let end = timeToMinutes(saida);
@@ -567,7 +641,7 @@ function hasConflict(demandaId, cpf) {
   if (nEnd < nStart) nEnd += 24 * 60;
 
   for (let d of state.demandas) {
-    if (d.confirmados && d.confirmados.find(c => c.cpf === cpf)) {
+    if (d.confirmados && d.confirmados.find(c => c.cpf === cpf) && d.id !== demandaId) {
       const eH = state.horarios.find(x => x.id === d.horarioId);
       if(!eH) continue;
       const eStart = timeToMinutes(eH.entrada);
@@ -578,6 +652,18 @@ function hasConflict(demandaId, cpf) {
     }
   }
   return false;
+}
+
+// Lógica de tempo para cancelamento (4 horas de antecedência)
+function getNextOccurrence(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const now = new Date();
+  const target = new Date();
+  target.setHours(h, m, 0, 0);
+  if (target < now) {
+    target.setDate(target.getDate() + 1);
+  }
+  return target;
 }
 
 function renderHome() {
@@ -593,7 +679,8 @@ function renderHome() {
     if (d.confirmados && d.confirmados.length > 0) {
       htmlPessoas = `<div class="pessoas-confirmadas">`;
       d.confirmados.forEach(c => {
-        htmlPessoas += `<span class="pessoa-tag">${c.nome.split(' ')[0]} - ${maskCpf(c.cpf)}</span>`;
+        // Nome completo renderizado
+        htmlPessoas += `<span class="pessoa-tag">${c.nome} - ${maskCpf(c.cpf)}</span>`;
       });
       htmlPessoas += `</div>`;
     }
@@ -605,8 +692,8 @@ function renderHome() {
             <h4>${h.entrada} às ${h.saida}</h4>
             <p>Carga Horária: ${h.carga} | Vagas: ${preenchidas} preenchidas de ${d.vagas}</p>
           </div>
-          <button class="${isFull ? 'btn-secondary' : 'btn-primary'}" style="width:auto; margin:0;" ${isFull ? 'disabled' : ''} onclick="abrirConfirmacao('${d.id}')">
-            ${isFull ? 'Vagas Esgotadas' : 'Confirmar Vaga'}
+          <button class="${isFull ? 'btn-secondary' : 'btn-primary'}" style="width:auto; margin:0;" onclick="abrirInteracaoVaga('${d.id}')">
+            ${isFull ? 'Ver Vaga' : 'Confirmar Vaga'}
           </button>
         </div>
         ${htmlPessoas}
@@ -615,7 +702,141 @@ function renderHome() {
   });
 }
 
-// ---- FUNÇÕES DO ADMINISTRADOR ----
+// ---- INTERAÇÃO DO DIARISTA COM A VAGA (CONFIRMAR OU DESISTIR) ----
+function fecharModalAcao() {
+  modalAcaoVaga.classList.remove('active');
+  document.getElementById('acao-cpf').value = '';
+  document.getElementById('acao-nome').value = '';
+  document.getElementById('acao-whatsapp').value = '';
+  document.getElementById('acao-vaga-cpf-step').style.display = 'block';
+  document.getElementById('acao-vaga-cadastro-step').style.display = 'none';
+  document.getElementById('acao-vaga-cancelar-step').style.display = 'none';
+}
+
+function abrirInteracaoVaga(demandaId) {
+  state.currentDemandaId = demandaId;
+  const d = state.demandas.find(x => x.id === demandaId);
+  const h = state.horarios.find(x => x.id === d.horarioId);
+  
+  const vDiaria = h.valorDiaria ? parseFloat(h.valorDiaria).toFixed(2) : "0.00";
+  const vVT = h.valorVT ? parseFloat(h.valorVT).toFixed(2) : "0.00";
+  const vVA = h.valorVA ? parseFloat(h.valorVA).toFixed(2) : "0.00";
+
+  document.getElementById('acao-vaga-detalhes').innerHTML = `
+    <p><strong>Turno:</strong> ${h.entrada} às ${h.saida}</p>
+    <div class="financeiro-info">
+      <div><span>Valor da Diária:</span> <strong>R$ ${vDiaria}</strong></div>
+      <div><span>Vale Transporte (VT):</span> <strong>R$ ${vVT}</strong></div>
+      <div><span>Vale Alimentação (VA):</span> <strong>R$ ${vVA}</strong></div>
+    </div>
+  `;
+  
+  fecharModalAcao(); 
+  modalAcaoVaga.classList.add('active');
+  document.getElementById('acao-vaga-cpf-step').style.display = 'block';
+
+  // Se o usuário já tiver o CPF salvo no localstorage, pode preencher automaticamente
+  const cpfSalvo = localStorage.getItem('unefreelas_cpf');
+  if(cpfSalvo) {
+    document.getElementById('acao-cpf').value = cpfSalvo;
+  }
+}
+
+document.getElementById('btn-acao-continuar').addEventListener('click', () => {
+  const cpf = document.getElementById('acao-cpf').value.trim();
+  if(!cpf) { alert("Informe seu CPF."); return; }
+  
+  const d = state.demandas.find(x => x.id === state.currentDemandaId);
+  const h = state.horarios.find(x => x.id === d.horarioId);
+  const jaConfirmado = d.confirmados && d.confirmados.find(c => c.cpf === cpf);
+
+  document.getElementById('acao-vaga-cpf-step').style.display = 'none';
+
+  if (jaConfirmado) {
+    // Fluxo de Desistência
+    document.getElementById('acao-vaga-cancelar-step').style.display = 'block';
+    
+    const diffMs = getNextOccurrence(h.entrada) - new Date();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    const btnDesistir = document.getElementById('btn-acao-desistir');
+    const msg = document.getElementById('msg-cancelamento');
+    msg.style.display = 'block';
+
+    if (diffHours >= 4) {
+      msg.innerHTML = "Você está confirmado neste turno. Deseja desistir desta vaga?";
+      msg.style.color = "var(--text)";
+      msg.style.backgroundColor = "transparent";
+      msg.style.border = "none";
+      btnDesistir.style.display = 'block';
+      
+      btnDesistir.onclick = async function() {
+        d.confirmados = d.confirmados.filter(c => c.cpf !== cpf);
+        await fetch(`${apiUrl}/demandas`, { method: 'POST', body: JSON.stringify(state.demandas) });
+        fecharModalAcao();
+        fetchState();
+      };
+    } else {
+      msg.innerHTML = "Como já passou as 4 horas de antecedência, caso você queira desistir ou faltar, isso gerará falta e provavelmente você será bloqueado no sistema! Fale com o responsável da operação para evitar bloqueios.";
+      msg.style.color = "#E65100";
+      msg.style.backgroundColor = "#FFF3E0";
+      msg.style.borderLeft = "4px solid #FF9800";
+      btnDesistir.style.display = 'none';
+    }
+
+  } else {
+    // Fluxo de Confirmação
+    const diaristaCadastrado = state.diaristas.find(x => x.cpf === cpf);
+    if(diaristaCadastrado) {
+      efetivarConfirmacao(cpf, diaristaCadastrado.nome);
+    } else {
+      document.getElementById('acao-vaga-cadastro-step').style.display = 'block';
+      document.getElementById('btn-acao-confirmar').onclick = async function() {
+        const nome = document.getElementById('acao-nome').value;
+        const zap = document.getElementById('acao-whatsapp').value;
+        if(!nome || !zap) { alert("Preencha todos os campos!"); return; }
+
+        state.diaristas.push({ id: Date.now().toString(), cpf, nome, zap, isFixo: false, isBloqueado: false, horariosPrioritarios: [] });
+        await fetch(`${apiUrl}/diaristas`, { method: 'POST', body: JSON.stringify(state.diaristas) });
+        
+        localStorage.setItem('unefreelas_cpf', cpf);
+        localStorage.setItem('unefreelas_nome', nome);
+        efetivarConfirmacao(cpf, nome);
+      };
+    }
+  }
+});
+
+async function efetivarConfirmacao(cpf, nome) {
+  const diarista = state.diaristas.find(x => x.cpf === cpf);
+  if (diarista && diarista.isBloqueado) {
+    alert('Operação não permitida. Você está bloqueado. Contate o responsável.');
+    fecharModalAcao();
+    return;
+  }
+  if (hasConflict(state.currentDemandaId, cpf)) {
+    alert('Atenção: Você já possui um turno confirmado que conflita com este horário escolhido!');
+    fecharModalAcao();
+    return;
+  }
+  
+  const d = state.demandas.find(x => x.id === state.currentDemandaId);
+  if (!d.confirmados) d.confirmados = [];
+  
+  if (d.confirmados.length < d.vagas) {
+    d.confirmados.push({ cpf, nome });
+    await fetch(`${apiUrl}/demandas`, { method: 'POST', body: JSON.stringify(state.demandas) });
+    await fetch(`${apiUrl}/log`, { method: 'POST', body: JSON.stringify({ cpf, nome, demandaId: d.id, data: new Date().toISOString() }) });
+    alert("Vaga confirmada com sucesso!");
+    fecharModalAcao();
+    fetchState();
+  } else {
+    alert("Infelizmente as vagas para este horário já foram esgotadas.");
+    fecharModalAcao();
+  }
+}
+
+// ---- FUNÇÕES DO ADMINISTRADOR E GESTOR ----
 function renderAdmin() {
   const sel = document.getElementById('demanda-horario');
   sel.innerHTML = '<option value="">Selecione o Horário Desejado</option>';
@@ -624,7 +845,8 @@ function renderAdmin() {
   const lH = document.getElementById('lista-horarios');
   lH.innerHTML = '';
   state.horarios.forEach(h => {
-    lH.innerHTML += `<div class="list-item"><h4>${h.entrada} às ${h.saida}</h4><p>Tempo de Intervalo: ${h.intervalo} Minutos | Carga Horária: ${h.carga}</p></div>`;
+    const vDiaria = h.valorDiaria ? parseFloat(h.valorDiaria).toFixed(2) : "0.00";
+    lH.innerHTML += `<div class="list-item"><h4>${h.entrada} às ${h.saida}</h4><p>Tempo de Intervalo: ${h.intervalo} Minutos | Carga Horária: ${h.carga} | Diária: R$ ${vDiaria}</p></div>`;
   });
 
   const lD = document.getElementById('lista-demandas');
@@ -645,30 +867,7 @@ function renderAdmin() {
     }
   });
 
-  const lDiaristasAdmin = document.getElementById('lista-diaristas-admin');
-  lDiaristasAdmin.innerHTML = '';
-  state.diaristas.forEach(di => {
-    lDiaristasAdmin.innerHTML += `
-      <div class="list-item">
-        <h4>${di.nome} (${maskCpf(di.cpf)})</h4>
-        <p>WhatsApp: ${di.zap}</p>
-        <div class="toggle-row">
-          <span>Diarista Fixo</span>
-          <label class="toggle-switch">
-            <input type="checkbox" ${di.isFixo ? 'checked' : ''} onchange="toggleDiarista('${di.id}', 'isFixo')">
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="toggle-row">
-          <span>Diarista Bloqueado</span>
-          <label class="toggle-switch">
-            <input type="checkbox" ${di.isBloqueado ? 'checked' : ''} onchange="toggleDiarista('${di.id}', 'isBloqueado')">
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
-    `;
-  });
+  filtrarDiaristas('admin');
 }
 
 document.getElementById('form-horario').addEventListener('submit', async (e) => {
@@ -677,7 +876,10 @@ document.getElementById('form-horario').addEventListener('submit', async (e) => 
     id: Date.now().toString(),
     entrada: document.getElementById('horario-entrada').value,
     saida: document.getElementById('horario-saida').value,
-    intervalo: parseInt(document.getElementById('horario-intervalo').value)
+    intervalo: parseInt(document.getElementById('horario-intervalo').value),
+    valorDiaria: parseFloat(document.getElementById('horario-diaria').value),
+    valorVT: parseFloat(document.getElementById('horario-vt').value),
+    valorVA: parseFloat(document.getElementById('horario-va').value)
   };
   obj.carga = calcCargaHoraria(obj.entrada, obj.saida);
   state.horarios.push(obj);
@@ -730,30 +932,55 @@ async function toggleDiarista(id, property) {
   }
 }
 
-async function atualizarHorarioGestor(id, objSelect) {
-  const d = state.diaristas.find(x => x.id === id);
+async function togglePrioridadeGestor(diaristaId, horarioId) {
+  const d = state.diaristas.find(x => x.id === diaristaId);
   if(d) {
-    d.horarioEspecificoId = objSelect.value;
+    if(!d.horariosPrioritarios) d.horariosPrioritarios = [];
+    if(d.horariosPrioritarios.includes(horarioId)) {
+      d.horariosPrioritarios = d.horariosPrioritarios.filter(x => x !== horarioId);
+    } else {
+      d.horariosPrioritarios.push(horarioId);
+    }
     await fetch(`${apiUrl}/diaristas`, { method: 'POST', body: JSON.stringify(state.diaristas) });
   }
 }
 
-// ---- FUNÇÕES DO GESTOR ----
-function renderGestor() {
-  const lDiaristasGestor = document.getElementById('lista-diaristas-gestor');
-  lDiaristasGestor.innerHTML = '';
-  
-  // Criar opcoes de horarios para o Gestor selecionar
-  let opcoesHorarios = `<option value="">Nenhum horário priorizado</option>`;
-  state.horarios.forEach(h => {
-    opcoesHorarios += `<option value="${h.id}">${h.entrada} às ${h.saida}</option>`;
-  });
+function filtrarDiaristas(tela) {
+  const query = document.getElementById(`filtro-diaristas-${tela}`).value.toLowerCase();
+  const listContainer = document.getElementById(`lista-diaristas-${tela}`);
+  listContainer.innerHTML = '';
 
-  state.diaristas.forEach(di => {
-    const selected = di.horarioEspecificoId || "";
-    const optionsWithSelection = opcoesHorarios.replace(`value="${selected}"`, `value="${selected}" selected`);
-    
-    lDiaristasGestor.innerHTML += `
+  const filtrados = state.diaristas.filter(di => 
+    di.nome.toLowerCase().includes(query) || 
+    di.cpf.includes(query) || 
+    di.zap.includes(query)
+  );
+
+  filtrados.forEach(di => {
+    let gestorHtml = '';
+    if(tela === 'gestor') {
+      let togglesHorarios = '';
+      state.horarios.forEach(h => {
+        const isChecked = di.horariosPrioritarios && di.horariosPrioritarios.includes(h.id) ? 'checked' : '';
+        togglesHorarios += `
+          <div class="toggle-row">
+            <span style="font-size:14px;">${h.entrada} às ${h.saida}</span>
+            <label class="toggle-switch">
+              <input type="checkbox" ${isChecked} onchange="togglePrioridadeGestor('${di.id}', '${h.id}')">
+              <span class="slider"></span>
+            </label>
+          </div>
+        `;
+      });
+      gestorHtml = `
+        <div class="priority-hours-container">
+          <label style="font-size: 14px; font-weight: 700; margin-bottom: 8px; display: block;">Horários Prioritários (Exclusivo Gestor):</label>
+          ${togglesHorarios}
+        </div>
+      `;
+    }
+
+    listContainer.innerHTML += `
       <div class="list-item">
         <h4>${di.nome} (${maskCpf(di.cpf)})</h4>
         <p>WhatsApp: ${di.zap}</p>
@@ -773,15 +1000,14 @@ function renderGestor() {
           </label>
         </div>
         
-        <div style="margin-top: 8px;">
-          <label style="font-size: 14px; font-weight: 500;">Horário Prioritário (Exclusivo Gestor):</label>
-          <select class="editable-input" onchange="atualizarHorarioGestor('${di.id}', this)">
-            ${optionsWithSelection}
-          </select>
-        </div>
+        ${gestorHtml}
       </div>
     `;
   });
+}
+
+function renderGestor() {
+  filtrarDiaristas('gestor');
 
   const p = document.getElementById('tabela-presenca');
   const tInt = document.getElementById('tabela-intervalo');
@@ -792,7 +1018,6 @@ function renderGestor() {
     const h = state.horarios.find(x => x.id === d.horarioId);
     if (d.confirmados && h) {
       d.confirmados.forEach(c => {
-        // Aba Presença
         p.innerHTML += `
           <div class="list-item">
             <h4>${c.nome}</h4>
@@ -803,11 +1028,10 @@ function renderGestor() {
             </div>
           </div>`;
           
-        // Aba Intervalo
         tInt.innerHTML += `
           <div class="list-item">
             <h4>${c.nome}</h4>
-            <p>CPF: ${maskCpf(c.cpf)}</p>
+            <p>CPF: ${maskCpf(c.cpf)} | Turno Escalonado: ${h.entrada} às ${h.saida}</p>
             <div class="list-item-row" style="gap: 8px;">
               <input type="time" class="editable-input" placeholder="Saída Intervalo">
               <input type="time" class="editable-input" placeholder="Retorno Intervalo">
@@ -819,7 +1043,7 @@ function renderGestor() {
 }
 
 document.getElementById('btn-share-whatsapp-presenca').addEventListener('click', () => {
-  let text = "*UNEFREELAS - ESCALA DE DIARISTAS*\n\n";
+  let text = "*ESCALA DE DIARISTAS*\n\n";
   state.demandas.forEach(d => {
     const h = state.horarios.find(x => x.id === d.horarioId);
     if(h && d.confirmados && d.confirmados.length > 0) {
@@ -833,55 +1057,6 @@ document.getElementById('btn-share-whatsapp-presenca').addEventListener('click',
   const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
   window.open(url, '_blank');
 });
-
-// ---- FLUXO DE CONFIRMAÇÃO DIARISTA ----
-function abrirConfirmacao(demandaId) {
-  state.currentDemandaId = demandaId;
-  const cpf = localStorage.getItem('unefreelas_cpf');
-  if (!cpf) {
-    modalCadastro.classList.add('active');
-  } else {
-    processarConfirmacao(cpf, localStorage.getItem('unefreelas_nome'));
-  }
-}
-
-document.getElementById('btn-cad-submit').addEventListener('click', async () => {
-  const cpf = document.getElementById('cad-cpf').value;
-  const nome = document.getElementById('cad-nome').value;
-  const zap = document.getElementById('cad-whatsapp').value;
-  
-  if (!state.diaristas.find(x => x.cpf === cpf)) {
-    state.diaristas.push({ id: Date.now().toString(), cpf, nome, zap, isFixo: false, isBloqueado: false, horarioEspecificoId: "" });
-    await fetch(`${apiUrl}/diaristas`, { method: 'POST', body: JSON.stringify(state.diaristas) });
-  }
-  localStorage.setItem('unefreelas_cpf', cpf);
-  localStorage.setItem('unefreelas_nome', nome);
-  modalCadastro.classList.remove('active');
-  processarConfirmacao(cpf, nome);
-});
-
-async function processarConfirmacao(cpf, nome) {
-  const diarista = state.diaristas.find(x => x.cpf === cpf);
-  if (diarista && diarista.isBloqueado) {
-    alert('Operação não permitida neste momento. Contate o gestor da operação.');
-    return;
-  }
-  if (hasConflict(state.currentDemandaId, cpf)) {
-    alert('Atenção: Você já possui um turno confirmado que conflita com este horário escolhido!');
-    return;
-  }
-  
-  const d = state.demandas.find(x => x.id === state.currentDemandaId);
-  if (!d.confirmados) d.confirmados = [];
-  if (d.confirmados.find(c => c.cpf === cpf)) return;
-  
-  if (d.confirmados.length < d.vagas) {
-    d.confirmados.push({ cpf, nome });
-    await fetch(`${apiUrl}/demandas`, { method: 'POST', body: JSON.stringify(state.demandas) });
-    await fetch(`${apiUrl}/log`, { method: 'POST', body: JSON.stringify({ cpf, nome, demandaId: d.id, data: new Date().toISOString() }) });
-    fetchState();
-  }
-}
 
 init();
 </script>
