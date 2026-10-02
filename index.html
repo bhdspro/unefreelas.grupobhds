@@ -32,12 +32,13 @@ body {
 }
 .top-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* Mantém um lado na esquerda e outro na direita */
   align-items: center;
   padding: 16px 20px;
   background-color: var(--primary);
   color: var(--bg);
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  width: 100%;
 }
 .logo-container {
   display: flex;
@@ -54,6 +55,11 @@ body {
   font-weight: 700;
   letter-spacing: 0.5px;
 }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 .icon-btn {
   background: none;
   border: none;
@@ -62,6 +68,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.icon-btn .material-icons {
+  font-size: 28px;
 }
 .view {
   display: none;
@@ -95,7 +104,7 @@ h3 { font-size: 18px; margin-bottom: 12px; }
   padding-bottom: 4px;
 }
 .tab-btn {
-  padding: 8px 12px;
+  padding: 10px 14px;
   border: none;
   background-color: transparent;
   color: var(--text-secondary);
@@ -143,7 +152,10 @@ button:active { opacity: 0.8; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-primary { background-color: var(--primary); color: var(--bg); }
 .btn-secondary { background-color: var(--surface); color: var(--primary); border: 1px solid var(--primary); }
+.btn-danger { background-color: #D32F2F; color: white; }
 .btn-text { background: none; color: var(--text-secondary); }
+.btn-row { display: flex; gap: 8px; margin-top: 10px; }
+.btn-row button { margin-bottom: 0; padding: 10px; font-size: 14px; }
 .list-item {
   background-color: var(--bg);
   padding: 16px;
@@ -176,10 +188,15 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   margin-bottom: 4px;
   color: var(--text);
 }
-.toggle-container {
+.toggle-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--surface);
+}
+.toggle-row:last-child {
+  border-bottom: none;
 }
 .toggle-switch {
   position: relative;
@@ -228,6 +245,13 @@ input:checked + .slider:before { transform: translateX(20px); }
   max-width: 400px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
+.editable-input {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  width: 100%;
+  margin-top: 4px;
+}
 </style>
 </head>
 <body>
@@ -237,9 +261,14 @@ input:checked + .slider:before { transform: translateX(20px); }
     <img src="/logo.png" alt="Logo" class="top-logo">
     <span class="logo-text">UNEFREELAS</span>
   </div>
-  <button class="icon-btn" id="btn-login-modal">
-    <span class="material-icons">settings</span>
-  </button>
+  <div class="header-actions">
+    <button class="icon-btn" id="btn-voltar-inicio" style="display:none;" title="Voltar para a Tela Inicial">
+      <span class="material-icons">home</span>
+    </button>
+    <button class="icon-btn" id="btn-login-modal" title="Painel de Administração">
+      <span class="material-icons">settings</span>
+    </button>
+  </div>
 </header>
 
 <main id="view-home" class="view active">
@@ -249,20 +278,20 @@ input:checked + .slider:before { transform: translateX(20px); }
   </div>
 </main>
 
+<!-- ABA DO ADMINISTRADOR -->
 <main id="view-admin" class="view">
   <nav class="tabs">
     <button class="tab-btn active" data-target="admin-demandas">Demandas</button>
     <button class="tab-btn" data-target="admin-horarios">Horários</button>
-    <button class="tab-btn" data-target="admin-diaristas-fixos">Fixo</button>
-    <button class="tab-btn" data-target="admin-diaristas-bloqueados">Bloq.</button>
+    <button class="tab-btn" data-target="admin-diaristas">Diaristas</button>
   </nav>
   
   <section id="admin-demandas" class="tab-content active">
     <h3>Gerenciar Demandas</h3>
     <form id="form-demanda">
       <select id="demanda-horario" required></select>
-      <input type="number" id="demanda-vagas" placeholder="Vagas Disponíveis" required>
-      <button type="submit" class="btn-primary">Adicionar Vagas</button>
+      <input type="number" id="demanda-vagas" placeholder="Número de Vagas Disponíveis" required>
+      <button type="submit" class="btn-primary">Adicionar Demanda</button>
     </form>
     <div id="lista-demandas"></div>
   </section>
@@ -270,108 +299,101 @@ input:checked + .slider:before { transform: translateX(20px); }
   <section id="admin-horarios" class="tab-content">
     <h3>Gerenciar Horários</h3>
     <form id="form-horario">
-      <input type="time" id="horario-entrada" required>
-      <input type="time" id="horario-saida" required>
-      <input type="number" id="horario-intervalo" placeholder="Minutos do Intervalo" required>
+      <input type="time" id="horario-entrada" required title="Horário de Entrada">
+      <input type="time" id="horario-saida" required title="Horário de Saída">
+      <input type="number" id="horario-intervalo" placeholder="Quantidade de Minutos do Intervalo" required>
       <button type="submit" class="btn-primary">Criar Horário</button>
     </form>
     <div id="lista-horarios"></div>
   </section>
 
-  <section id="admin-diaristas-fixos" class="tab-content">
-    <h3>Diaristas Fixos</h3>
-    <div id="lista-fixos-admin"></div>
-  </section>
-
-  <section id="admin-diaristas-bloqueados" class="tab-content">
-    <h3>Diaristas Bloqueados</h3>
-    <div id="lista-bloqueados-admin"></div>
+  <section id="admin-diaristas" class="tab-content">
+    <h3>Gerenciar Diaristas</h3>
+    <div id="lista-diaristas-admin"></div>
   </section>
 </main>
 
+<!-- ABA DO GESTOR -->
 <main id="view-gestor" class="view">
   <nav class="tabs">
-    <button class="tab-btn active" data-target="gestor-diaristas-fixos">Fixos</button>
-    <button class="tab-btn" data-target="gestor-diaristas-bloqueados">Bloq.</button>
-    <button class="tab-btn" data-target="gestor-lista-presenca">Presença</button>
-    <button class="tab-btn" data-target="gestor-lista-intervalo">Intervalo</button>
+    <button class="tab-btn active" data-target="gestor-diaristas">Diaristas</button>
+    <button class="tab-btn" data-target="gestor-lista-presenca">Lista de Presença</button>
+    <button class="tab-btn" data-target="gestor-lista-intervalo">Lista de Intervalo</button>
   </nav>
 
-  <section id="gestor-diaristas-fixos" class="tab-content active">
-    <h3>Controle de Fixos (Avançado)</h3>
-    <div id="lista-fixos-gestor"></div>
-  </section>
-
-  <section id="gestor-diaristas-bloqueados" class="tab-content">
-    <h3>Controle de Bloqueados</h3>
-    <div id="lista-bloqueados-gestor"></div>
+  <section id="gestor-diaristas" class="tab-content active">
+    <h3>Gerenciar Diaristas (Avançado)</h3>
+    <div id="lista-diaristas-gestor"></div>
   </section>
 
   <section id="gestor-lista-presenca" class="tab-content">
     <h3>Lista de Presença Escala</h3>
+    <button id="btn-share-whatsapp-presenca" class="btn-primary">Compartilhar Escala no WhatsApp</button>
     <div id="tabela-presenca"></div>
-    <button id="btn-export-presenca" class="btn-primary">Exportar Presença</button>
-    <button id="btn-share-whatsapp" class="btn-secondary">Compartilhar no Grupo</button>
   </section>
 
   <section id="gestor-lista-intervalo" class="tab-content">
     <h3>Lista de Intervalo Escala</h3>
     <div id="tabela-intervalo"></div>
-    <button id="btn-export-intervalo" class="btn-primary">Exportar Intervalo</button>
   </section>
 </main>
 
+<!-- ABA DIARISTA FIXO -->
 <main id="view-diarista-fixo" class="view">
   <nav class="tabs">
     <button class="tab-btn active" data-target="fixo-disponibilidade">Disponibilidade</button>
-    <button class="tab-btn" data-target="fixo-horarios">Turno/Intervalo</button>
+    <button class="tab-btn" data-target="fixo-horarios">Turno e Intervalo</button>
   </nav>
   
   <section id="fixo-disponibilidade" class="tab-content active">
-    <h3>Confirmar Dias</h3>
+    <h3>Confirmar Dias Antecipadamente</h3>
     <div id="fixo-dias-semana"></div>
   </section>
 
   <section id="fixo-horarios" class="tab-content">
     <h3>Meus Horários</h3>
     <div id="fixo-turnos-opcoes"></div>
-    <input type="time" id="fixo-hora-intervalo" placeholder="Definir saída intervalo">
-    <button class="btn-primary" id="btn-salvar-intervalo">Salvar Intervalo</button>
+    <label style="font-weight: 500; margin-top:12px; display:block;">Definir Horário de Saída do Intervalo:</label>
+    <input type="time" id="fixo-hora-intervalo" placeholder="Horário do intervalo">
+    <button class="btn-primary" id="btn-salvar-intervalo">Salvar Horário de Intervalo</button>
   </section>
 </main>
 
+<!-- ABA DIARISTA NORMAL -->
 <main id="view-diarista-normal" class="view">
   <nav class="tabs">
     <button class="tab-btn active" data-target="normal-disponibilidade">Disponibilidade</button>
-    <button class="tab-btn" data-target="normal-horarios">Turno/Intervalo</button>
+    <button class="tab-btn" data-target="normal-horarios">Turno e Intervalo</button>
   </nav>
 
   <section id="normal-disponibilidade" class="tab-content active">
+    <h3>Confirmar Disponibilidade</h3>
     <div id="normal-demandas-lista"></div>
   </section>
 
   <section id="normal-horarios" class="tab-content">
-    <h3>Seu Turno e Intervalo</h3>
+    <h3>Detalhes do Turno e Intervalo</h3>
     <div id="normal-info-turno"></div>
   </section>
 </main>
 
+<!-- MODAIS -->
 <div id="modal-login" class="modal">
   <div class="modal-content">
-    <h3>Autenticação</h3>
+    <h3>Acesso Administrativo</h3>
     <input type="password" id="input-senha" placeholder="Insira a senha de acesso">
-    <button id="btn-login-submit" class="btn-primary">Acessar Painel</button>
-    <button class="btn-close-modal btn-text">Voltar</button>
+    <button id="btn-login-submit" class="btn-primary">Entrar no Painel</button>
+    <button class="btn-close-modal btn-text">Cancelar</button>
   </div>
 </div>
 
 <div id="modal-cadastro" class="modal">
   <div class="modal-content">
-    <h3>Confirme seus Dados</h3>
+    <h3>Cadastro Rápido</h3>
     <input type="text" id="cad-cpf" placeholder="CPF (Apenas números)" required maxlength="14">
     <input type="text" id="cad-nome" placeholder="Nome Completo" required>
-    <input type="tel" id="cad-whatsapp" placeholder="WhatsApp com DDD" required>
-    <button id="btn-cad-submit" class="btn-primary">Confirmar Disponibilidade</button>
+    <input type="tel" id="cad-whatsapp" placeholder="Número de WhatsApp com DDD" required>
+    <button id="btn-cad-submit" class="btn-primary">Salvar e Confirmar Vaga</button>
     <button class="btn-close-modal btn-text">Cancelar</button>
   </div>
 </div>
@@ -383,13 +405,14 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-const apiUrl = 'https://unefreelas.grupo-bhds.workers.dev';
+const apiUrl = 'https://api.unefreelas.grupobhds.com';
 
 const views = document.querySelectorAll('.view');
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 const modals = document.querySelectorAll('.modal');
 const btnLoginModal = document.getElementById('btn-login-modal');
+const btnVoltarInicio = document.getElementById('btn-voltar-inicio');
 const modalLogin = document.getElementById('modal-login');
 const modalCadastro = document.getElementById('modal-cadastro');
 const inputSenha = document.getElementById('input-senha');
@@ -406,7 +429,9 @@ async function fetchState() {
     state.demandas = data.demandas || [];
     state.diaristas = data.diaristas || [];
     refreshActiveView();
-  } catch(e) {}
+  } catch(e) {
+    console.log("Aguardando comunicação com o servidor...");
+  }
 }
 
 function startPolling() {
@@ -439,8 +464,21 @@ async function init() {
 function switchView(viewId) {
   views.forEach(v => v.classList.remove('active'));
   document.getElementById(viewId).classList.add('active');
+  
+  // Controle de exibição dos botões do header
+  if(viewId === 'view-admin' || viewId === 'view-gestor') {
+    btnVoltarInicio.style.display = 'flex';
+    btnLoginModal.style.display = 'none';
+  } else {
+    btnVoltarInicio.style.display = 'none';
+    btnLoginModal.style.display = 'flex';
+  }
   refreshActiveView();
 }
+
+btnVoltarInicio.addEventListener('click', () => {
+  switchView('view-home');
+});
 
 function switchTab(tabId) {
   tabContents.forEach(t => t.classList.remove('active'));
@@ -489,7 +527,7 @@ document.getElementById('btn-login-submit').addEventListener('click', async () =
       alert('Senha incorreta!');
     }
   } catch(e) {
-    alert('Erro ao autenticar. Verifique a conexão e tente novamente.');
+    alert('Erro ao autenticar. Verifique a conexão com o banco de dados e tente novamente.');
   }
 });
 
@@ -498,12 +536,17 @@ function timeToMinutes(t) {
   return h * 60 + m;
 }
 
-function calcCH(e, s, i) {
-  const start = timeToMinutes(e);
-  let end = timeToMinutes(s);
+// A carga horária agora soma o horário trabalhado + intervalo (Saída - Entrada direta)
+function calcCargaHoraria(entrada, saida) {
+  const start = timeToMinutes(entrada);
+  let end = timeToMinutes(saida);
   if (end < start) end += 24 * 60;
-  const t = end - start - i;
-  return `${Math.floor(t / 60)}h${t % 60 > 0 ? t % 60 + 'm' : ''}`;
+  const t = end - start;
+  const horas = Math.floor(t / 60);
+  const minutos = t % 60;
+  
+  if (minutos === 0) return `${horas} Horas`;
+  return `${horas} Horas e ${minutos} Minutos`;
 }
 
 function maskCpf(cpfRaw) {
@@ -517,6 +560,8 @@ function maskCpf(cpfRaw) {
 function hasConflict(demandaId, cpf) {
   const newD = state.demandas.find(x => x.id === demandaId);
   const newH = state.horarios.find(x => x.id === newD.horarioId);
+  if(!newH) return false;
+  
   const nStart = timeToMinutes(newH.entrada);
   let nEnd = timeToMinutes(newH.saida);
   if (nEnd < nStart) nEnd += 24 * 60;
@@ -524,6 +569,7 @@ function hasConflict(demandaId, cpf) {
   for (let d of state.demandas) {
     if (d.confirmados && d.confirmados.find(c => c.cpf === cpf)) {
       const eH = state.horarios.find(x => x.id === d.horarioId);
+      if(!eH) continue;
       const eStart = timeToMinutes(eH.entrada);
       let eEnd = timeToMinutes(eH.saida);
       if (eEnd < eStart) eEnd += 24 * 60;
@@ -540,8 +586,8 @@ function renderHome() {
   state.demandas.forEach(d => {
     const h = state.horarios.find(x => x.id === d.horarioId);
     if (!h) return;
-    const isFull = (d.confirmados ? d.confirmados.length : 0) >= d.vagas;
     const preenchidas = d.confirmados ? d.confirmados.length : 0;
+    const isFull = preenchidas >= d.vagas;
     
     let htmlPessoas = '';
     if (d.confirmados && d.confirmados.length > 0) {
@@ -556,11 +602,11 @@ function renderHome() {
       <div class="list-item">
         <div class="list-item-row">
           <div>
-            <h4>${h.entrada} - ${h.saida}</h4>
-            <p>CH: ${h.carga} | Vagas: ${preenchidas}/${d.vagas}</p>
+            <h4>${h.entrada} às ${h.saida}</h4>
+            <p>Carga Horária: ${h.carga} | Vagas: ${preenchidas} preenchidas de ${d.vagas}</p>
           </div>
           <button class="${isFull ? 'btn-secondary' : 'btn-primary'}" style="width:auto; margin:0;" ${isFull ? 'disabled' : ''} onclick="abrirConfirmacao('${d.id}')">
-            ${isFull ? 'Esgotado' : 'Confirmar'}
+            ${isFull ? 'Vagas Esgotadas' : 'Confirmar Vaga'}
           </button>
         </div>
         ${htmlPessoas}
@@ -569,22 +615,59 @@ function renderHome() {
   });
 }
 
+// ---- FUNÇÕES DO ADMINISTRADOR ----
 function renderAdmin() {
   const sel = document.getElementById('demanda-horario');
-  sel.innerHTML = '<option value="">Selecione</option>';
+  sel.innerHTML = '<option value="">Selecione o Horário Desejado</option>';
   state.horarios.forEach(h => sel.innerHTML += `<option value="${h.id}">${h.entrada} às ${h.saida}</option>`);
   
   const lH = document.getElementById('lista-horarios');
   lH.innerHTML = '';
   state.horarios.forEach(h => {
-    lH.innerHTML += `<div class="list-item"><h4>${h.entrada} - ${h.saida}</h4><p>Intervalo: ${h.intervalo}m | CH: ${h.carga}</p></div>`;
+    lH.innerHTML += `<div class="list-item"><h4>${h.entrada} às ${h.saida}</h4><p>Tempo de Intervalo: ${h.intervalo} Minutos | Carga Horária: ${h.carga}</p></div>`;
   });
 
   const lD = document.getElementById('lista-demandas');
   lD.innerHTML = '';
   state.demandas.forEach(d => {
     const h = state.horarios.find(x => x.id === d.horarioId);
-    lD.innerHTML += `<div class="list-item"><h4>${h.entrada} - ${h.saida}</h4><p>Vagas Totais: ${d.vagas}</p></div>`;
+    const preenchidas = d.confirmados ? d.confirmados.length : 0;
+    if(h) {
+      lD.innerHTML += `
+        <div class="list-item">
+          <h4>${h.entrada} às ${h.saida}</h4>
+          <p>Vagas Totais: ${d.vagas} | Vagas Preenchidas: ${preenchidas}</p>
+          <div class="btn-row">
+            <button class="btn-secondary" onclick="editarDemanda('${d.id}')">Editar Vagas</button>
+            <button class="btn-danger" onclick="excluirDemanda('${d.id}')">Excluir Demanda</button>
+          </div>
+        </div>`;
+    }
+  });
+
+  const lDiaristasAdmin = document.getElementById('lista-diaristas-admin');
+  lDiaristasAdmin.innerHTML = '';
+  state.diaristas.forEach(di => {
+    lDiaristasAdmin.innerHTML += `
+      <div class="list-item">
+        <h4>${di.nome} (${maskCpf(di.cpf)})</h4>
+        <p>WhatsApp: ${di.zap}</p>
+        <div class="toggle-row">
+          <span>Diarista Fixo</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${di.isFixo ? 'checked' : ''} onchange="toggleDiarista('${di.id}', 'isFixo')">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span>Diarista Bloqueado</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${di.isBloqueado ? 'checked' : ''} onchange="toggleDiarista('${di.id}', 'isBloqueado')">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    `;
   });
 }
 
@@ -596,7 +679,7 @@ document.getElementById('form-horario').addEventListener('submit', async (e) => 
     saida: document.getElementById('horario-saida').value,
     intervalo: parseInt(document.getElementById('horario-intervalo').value)
   };
-  obj.carga = calcCH(obj.entrada, obj.saida, obj.intervalo);
+  obj.carga = calcCargaHoraria(obj.entrada, obj.saida);
   state.horarios.push(obj);
   await fetch(`${apiUrl}/horarios`, { method: 'POST', body: JSON.stringify(state.horarios) });
   renderAdmin();
@@ -617,6 +700,141 @@ document.getElementById('form-demanda').addEventListener('submit', async (e) => 
   e.target.reset();
 });
 
+async function editarDemanda(id) {
+  const d = state.demandas.find(x => x.id === id);
+  if(d) {
+    const novasVagas = prompt("Quantas vagas disponíveis devem ter neste horário?", d.vagas);
+    if(novasVagas !== null && !isNaN(novasVagas) && novasVagas.trim() !== "") {
+      d.vagas = parseInt(novasVagas);
+      await fetch(`${apiUrl}/demandas`, { method: 'POST', body: JSON.stringify(state.demandas) });
+      renderAdmin();
+    }
+  }
+}
+
+async function excluirDemanda(id) {
+  if(confirm("Tem certeza que deseja excluir esta demanda e todas as vagas confirmadas nela?")) {
+    state.demandas = state.demandas.filter(x => x.id !== id);
+    await fetch(`${apiUrl}/demandas`, { method: 'POST', body: JSON.stringify(state.demandas) });
+    renderAdmin();
+  }
+}
+
+async function toggleDiarista(id, property) {
+  const d = state.diaristas.find(x => x.id === id);
+  if(d) {
+    d[property] = !d[property];
+    await fetch(`${apiUrl}/diaristas`, { method: 'POST', body: JSON.stringify(state.diaristas) });
+    if(state.currentRole === 'admin') renderAdmin();
+    if(state.currentRole === 'gestor') renderGestor();
+  }
+}
+
+async function atualizarHorarioGestor(id, objSelect) {
+  const d = state.diaristas.find(x => x.id === id);
+  if(d) {
+    d.horarioEspecificoId = objSelect.value;
+    await fetch(`${apiUrl}/diaristas`, { method: 'POST', body: JSON.stringify(state.diaristas) });
+  }
+}
+
+// ---- FUNÇÕES DO GESTOR ----
+function renderGestor() {
+  const lDiaristasGestor = document.getElementById('lista-diaristas-gestor');
+  lDiaristasGestor.innerHTML = '';
+  
+  // Criar opcoes de horarios para o Gestor selecionar
+  let opcoesHorarios = `<option value="">Nenhum horário priorizado</option>`;
+  state.horarios.forEach(h => {
+    opcoesHorarios += `<option value="${h.id}">${h.entrada} às ${h.saida}</option>`;
+  });
+
+  state.diaristas.forEach(di => {
+    const selected = di.horarioEspecificoId || "";
+    const optionsWithSelection = opcoesHorarios.replace(`value="${selected}"`, `value="${selected}" selected`);
+    
+    lDiaristasGestor.innerHTML += `
+      <div class="list-item">
+        <h4>${di.nome} (${maskCpf(di.cpf)})</h4>
+        <p>WhatsApp: ${di.zap}</p>
+        
+        <div class="toggle-row">
+          <span>Diarista Fixo</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${di.isFixo ? 'checked' : ''} onchange="toggleDiarista('${di.id}', 'isFixo')">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span>Diarista Bloqueado</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${di.isBloqueado ? 'checked' : ''} onchange="toggleDiarista('${di.id}', 'isBloqueado')">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div style="margin-top: 8px;">
+          <label style="font-size: 14px; font-weight: 500;">Horário Prioritário (Exclusivo Gestor):</label>
+          <select class="editable-input" onchange="atualizarHorarioGestor('${di.id}', this)">
+            ${optionsWithSelection}
+          </select>
+        </div>
+      </div>
+    `;
+  });
+
+  const p = document.getElementById('tabela-presenca');
+  const tInt = document.getElementById('tabela-intervalo');
+  p.innerHTML = '';
+  tInt.innerHTML = '';
+  
+  state.demandas.forEach(d => {
+    const h = state.horarios.find(x => x.id === d.horarioId);
+    if (d.confirmados && h) {
+      d.confirmados.forEach(c => {
+        // Aba Presença
+        p.innerHTML += `
+          <div class="list-item">
+            <h4>${c.nome}</h4>
+            <p>CPF: ${maskCpf(c.cpf)} | Turno Escalonado: ${h.entrada} às ${h.saida}</p>
+            <div class="list-item-row" style="gap: 8px;">
+              <input type="time" class="editable-input" placeholder="Horário Real Entrada">
+              <input type="time" class="editable-input" placeholder="Horário Real Saída">
+            </div>
+          </div>`;
+          
+        // Aba Intervalo
+        tInt.innerHTML += `
+          <div class="list-item">
+            <h4>${c.nome}</h4>
+            <p>CPF: ${maskCpf(c.cpf)}</p>
+            <div class="list-item-row" style="gap: 8px;">
+              <input type="time" class="editable-input" placeholder="Saída Intervalo">
+              <input type="time" class="editable-input" placeholder="Retorno Intervalo">
+            </div>
+          </div>`;
+      });
+    }
+  });
+}
+
+document.getElementById('btn-share-whatsapp-presenca').addEventListener('click', () => {
+  let text = "*UNEFREELAS - ESCALA DE DIARISTAS*\n\n";
+  state.demandas.forEach(d => {
+    const h = state.horarios.find(x => x.id === d.horarioId);
+    if(h && d.confirmados && d.confirmados.length > 0) {
+      text += `*Turno: ${h.entrada} às ${h.saida}* (Carga Horária: ${h.carga})\n`;
+      d.confirmados.forEach(c => {
+        text += `- ${c.nome} (${maskCpf(c.cpf)})\n`;
+      });
+      text += `\n`;
+    }
+  });
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+});
+
+// ---- FLUXO DE CONFIRMAÇÃO DIARISTA ----
 function abrirConfirmacao(demandaId) {
   state.currentDemandaId = demandaId;
   const cpf = localStorage.getItem('unefreelas_cpf');
@@ -633,7 +851,7 @@ document.getElementById('btn-cad-submit').addEventListener('click', async () => 
   const zap = document.getElementById('cad-whatsapp').value;
   
   if (!state.diaristas.find(x => x.cpf === cpf)) {
-    state.diaristas.push({ id: Date.now().toString(), cpf, nome, zap, isFixo: false, isBloqueado: false });
+    state.diaristas.push({ id: Date.now().toString(), cpf, nome, zap, isFixo: false, isBloqueado: false, horarioEspecificoId: "" });
     await fetch(`${apiUrl}/diaristas`, { method: 'POST', body: JSON.stringify(state.diaristas) });
   }
   localStorage.setItem('unefreelas_cpf', cpf);
@@ -645,11 +863,11 @@ document.getElementById('btn-cad-submit').addEventListener('click', async () => 
 async function processarConfirmacao(cpf, nome) {
   const diarista = state.diaristas.find(x => x.cpf === cpf);
   if (diarista && diarista.isBloqueado) {
-    alert('Operação não permitida neste momento.');
+    alert('Operação não permitida neste momento. Contate o gestor da operação.');
     return;
   }
   if (hasConflict(state.currentDemandaId, cpf)) {
-    alert('Você já possui um turno confirmado que conflita com este horário!');
+    alert('Atenção: Você já possui um turno confirmado que conflita com este horário escolhido!');
     return;
   }
   
@@ -663,18 +881,6 @@ async function processarConfirmacao(cpf, nome) {
     await fetch(`${apiUrl}/log`, { method: 'POST', body: JSON.stringify({ cpf, nome, demandaId: d.id, data: new Date().toISOString() }) });
     fetchState();
   }
-}
-
-function renderGestor() {
-  const p = document.getElementById('tabela-presenca');
-  p.innerHTML = '';
-  state.demandas.forEach(d => {
-    if (d.confirmados) {
-      d.confirmados.forEach(c => {
-        p.innerHTML += `<div class="list-item"><h4>${c.nome} (${maskCpf(c.cpf)})</h4><div class="list-item-row"><input type="time" placeholder="Entrada"><input type="time" placeholder="Saída"></div></div>`;
-      });
-    }
-  });
 }
 
 init();
