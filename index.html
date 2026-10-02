@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>UneFreelas</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/logo.png">
+<link rel="apple-touch-icon" href="/app.png">
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+
+<header class="top-bar">
+  <div class="logo-container">
+    <img src="/logo.png" alt="Logo" class="top-logo">
+    <span class="logo-text">UneFreelas</span>
+  </div>
+  <button class="icon-btn" id="btn-login-modal">
+    <span class="material-icons">settings</span>
+  </button>
+</header>
+
+<main id="view-home" class="view active">
+  <div class="card">
+    <h2>Horários Disponíveis</h2>
+    <div id="home-slots"></div>
+  </div>
+</main>
+
+<main id="view-admin" class="view">
+  <nav class="tabs">
+    <button class="tab-btn active" data-target="admin-demandas">Demandas</button>
+    <button class="tab-btn" data-target="admin-horarios">Horários</button>
+    <button class="tab-btn" data-target="admin-diaristas-fixos">Fixo</button>
+    <button class="tab-btn" data-target="admin-diaristas-bloqueados">Bloq.</button>
+  </nav>
+  
+  <section id="admin-demandas" class="tab-content active">
+    <h3>Gerenciar Demandas</h3>
+    <form id="form-demanda">
+      <select id="demanda-horario" required></select>
+      <input type="number" id="demanda-vagas" placeholder="Vagas Disponíveis" required>
+      <button type="submit" class="btn-primary">Adicionar Vagas</button>
+    </form>
+    <div id="lista-demandas"></div>
+  </section>
+
+  <section id="admin-horarios" class="tab-content">
+    <h3>Gerenciar Horários</h3>
+    <form id="form-horario">
+      <input type="time" id="horario-entrada" required>
+      <input type="time" id="horario-saida" required>
+      <input type="number" id="horario-intervalo" placeholder="Minutos do Intervalo" required>
+      <button type="submit" class="btn-primary">Criar Horário</button>
+    </form>
+    <div id="lista-horarios"></div>
+  </section>
+
+  <section id="admin-diaristas-fixos" class="tab-content">
+    <h3>Diaristas Fixos</h3>
+    <div id="lista-fixos-admin"></div>
+  </section>
+
+  <section id="admin-diaristas-bloqueados" class="tab-content">
+    <h3>Diaristas Bloqueados</h3>
+    <div id="lista-bloqueados-admin"></div>
+  </section>
+</main>
+
+<main id="view-gestor" class="view">
+  <nav class="tabs">
+    <button class="tab-btn active" data-target="gestor-diaristas-fixos">Fixos</button>
+    <button class="tab-btn" data-target="gestor-diaristas-bloqueados">Bloq.</button>
+    <button class="tab-btn" data-target="gestor-lista-presenca">Presença</button>
+    <button class="tab-btn" data-target="gestor-lista-intervalo">Intervalo</button>
+  </nav>
+
+  <section id="gestor-diaristas-fixos" class="tab-content active">
+    <h3>Controle de Fixos (Avançado)</h3>
+    <div id="lista-fixos-gestor"></div>
+  </section>
+
+  <section id="gestor-diaristas-bloqueados" class="tab-content">
+    <h3>Controle de Bloqueados</h3>
+    <div id="lista-bloqueados-gestor"></div>
+  </section>
+
+  <section id="gestor-lista-presenca" class="tab-content">
+    <h3>Lista de Presença Escala</h3>
+    <div id="tabela-presenca"></div>
+    <button id="btn-export-presenca" class="btn-primary">Exportar Presença</button>
+    <button id="btn-share-whatsapp" class="btn-secondary">Compartilhar no Grupo</button>
+  </section>
+
+  <section id="gestor-lista-intervalo" class="tab-content">
+    <h3>Lista de Intervalo Escala</h3>
+    <div id="tabela-intervalo"></div>
+    <button id="btn-export-intervalo" class="btn-primary">Exportar Intervalo</button>
+  </section>
+</main>
+
+<main id="view-diarista-fixo" class="view">
+  <nav class="tabs">
+    <button class="tab-btn active" data-target="fixo-disponibilidade">Disponibilidade</button>
+    <button class="tab-btn" data-target="fixo-horarios">Turno/Intervalo</button>
+  </nav>
+  
+  <section id="fixo-disponibilidade" class="tab-content active">
+    <h3>Confirmar Dias</h3>
+    <div id="fixo-dias-semana"></div>
+  </section>
+
+  <section id="fixo-horarios" class="tab-content">
+    <h3>Meus Horários</h3>
+    <div id="fixo-turnos-opcoes"></div>
+    <input type="time" id="fixo-hora-intervalo" placeholder="Definir saída intervalo">
+    <button class="btn-primary" id="btn-salvar-intervalo">Salvar Intervalo</button>
+  </section>
+</main>
+
+<main id="view-diarista-normal" class="view">
+  <nav class="tabs">
+    <button class="tab-btn active" data-target="normal-disponibilidade">Disponibilidade</button>
+    <button class="tab-btn" data-target="normal-horarios">Turno/Intervalo</button>
+  </nav>
+
+  <section id="normal-disponibilidade" class="tab-content active">
+    <div id="normal-demandas-lista"></div>
+  </section>
+
+  <section id="normal-horarios" class="tab-content">
+    <h3>Seu Turno e Intervalo</h3>
+    <div id="normal-info-turno"></div>
+  </section>
+</main>
+
+<div id="modal-login" class="modal">
+  <div class="modal-content">
+    <h3>Autenticação</h3>
+    <input type="password" id="input-senha" placeholder="Insira a senha de acesso">
+    <button id="btn-login-submit" class="btn-primary">Acessar Painel</button>
+    <button class="btn-close-modal btn-text">Voltar</button>
+  </div>
+</div>
+
+<div id="modal-cadastro" class="modal">
+  <div class="modal-content">
+    <h3>Confirme seus Dados</h3>
+    <input type="text" id="cad-cpf" placeholder="CPF (Apenas números)" required maxlength="14">
+    <input type="text" id="cad-nome" placeholder="Nome Completo" required>
+    <input type="tel" id="cad-whatsapp" placeholder="WhatsApp com DDD" required>
+    <button id="btn-cad-submit" class="btn-primary">Confirmar Disponibilidade</button>
+    <button class="btn-close-modal btn-text">Cancelar</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

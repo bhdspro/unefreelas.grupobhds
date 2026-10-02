@@ -1,0 +1,20 @@
+{
+  "name": "UneFreelas",
+  "short_name": "UneFreelas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FF4000",
+  "icons": [
+    {
+      "src": "/app192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/app512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
